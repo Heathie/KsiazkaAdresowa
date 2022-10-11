@@ -1,0 +1,7 @@
+# depslib dependency file v1.0
+1662630489 source:c:\programy\wyzwania\31.01.2022\ksiazkaadresowa\main.cpp
+	<iostream>
+	<windows.h>
+	<fstream>
+	<vector>
+
