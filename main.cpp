@@ -1,13 +1,18 @@
 #include <iostream>
-#include <windows.h>
 #include <fstream>
 #include <vector>
+#include <windows.h>
 
 using namespace std;
 
 struct Przyjaciel {
     int id=0;
     string imie="", nazwisko="", numerTelefonu="", email="", adres="";
+};
+
+struct Uzytkownik {
+    int idUzytkownika=0;
+    string login="", haslo="";
 };
 
 int dodawaniePrzyjacielaDoBazy (vector<Przyjaciel>& przyjaciele) {
@@ -81,6 +86,122 @@ int dodawaniePrzyjacielaDoBazy (vector<Przyjaciel>& przyjaciele) {
     }
 }
 
+vector<Uzytkownik> wczytajUzytkownikowZBazy () {
+    vector<Uzytkownik> uzytkownicy;
+    int nr_pola = 1;
+    string linia;
+    string temp;
+
+    Uzytkownik user;
+
+    fstream plik;
+    plik.open("Uzytkownicy.txt", fstream::in | fstream::out | fstream::app);
+
+    if (!plik.good()) {
+        plik<<"\n";
+    } else if (plik.good()) {
+        while(!plik.eof()) {
+            getline(plik, linia);
+
+            for (int i = 0; i < (int) linia.length(); i++) {
+                if (linia[i] == '|') {
+                    switch(nr_pola) {
+                    case 1:
+                        user.idUzytkownika = atoi(temp.c_str());
+                        break;
+                    case 2:
+                        user.login = temp;
+                        break;
+                    case 3:
+                        user.haslo = temp;
+                        break;
+                    }
+
+                    if (nr_pola == 3) {
+                        nr_pola = 1;
+                        uzytkownicy.push_back(user);
+                    } else {
+                        nr_pola++;
+                    }
+
+                    temp = "";
+                } else {
+                    temp.push_back(linia.at(i));
+                }
+            }
+        }
+    }
+    plik.close();
+
+    return uzytkownicy;
+}
+
+int logowanieUzytkownika (vector<Uzytkownik> uzytkownicy) {
+    string login, haslo;
+    cout<< "Podaj login"<<endl;
+    cin>>login;
+    cout<< "Podaj haslo"<<endl;
+    cin>>haslo;
+
+    for (int i=0; i < (int) uzytkownicy.size(); i++) {
+        if (uzytkownicy[i].login==login && uzytkownicy[i].haslo==haslo) {
+            return uzytkownicy[i].idUzytkownika;
+        }
+    }
+    cout<<"Bledne dane logowania"<<endl;
+    system ("pause");
+    return -1;
+}
+
+int dodawanieUzytkownikaDoBazy (vector<Uzytkownik>& uzytkownicy) {
+    string login,haslo;
+    while (true) {
+        bool juzIstnieje=false;
+
+        cout << "login: ";
+        cin>>login;
+
+        cout << "Podaj haslo: ";
+        cin>>haslo;
+
+        for (int i=0; i<(int) uzytkownicy.size(); i++) {
+            if (
+                uzytkownicy[i].login==login
+            ) {
+                cout << "Taki uzytkownik jest juz w bazie" << endl;
+                juzIstnieje=true;
+                break;
+            }
+        }
+
+        if (!juzIstnieje) {
+            Uzytkownik nowyUzytkownik;
+            nowyUzytkownik.idUzytkownika = uzytkownicy.size() > 0 ? uzytkownicy[uzytkownicy.size()-1].idUzytkownika + 1 : 1;
+            nowyUzytkownik.login=login;
+            nowyUzytkownik.haslo=haslo;
+            uzytkownicy.push_back(nowyUzytkownik);
+
+            fstream plik;
+            plik.open("Uzytkownicy.txt",fstream::out | fstream::app);
+            if (plik.good()) {
+                plik<<nowyUzytkownik.idUzytkownika<<"|";
+                plik<<nowyUzytkownik.login<<"|";
+                plik<<nowyUzytkownik.haslo<<"|";
+                plik<<endl;
+                plik.close();
+
+                cout << "Uzytkownik dodany"<<endl;
+                system ("pause");
+
+            } else {
+                cout << "Nie mozna otworzyc pliku: Uzytkownicy.txt do rejestracji adresatow" << endl;
+            }
+
+            return uzytkownicy.size()+1;
+        }
+    }
+}
+
 vector<Przyjaciel> wczytajPrzyjaciolZBazy () {
     vector<Przyjaciel> przyjaciele;
     int nr_pola = 1;
@@ -140,14 +261,14 @@ vector<Przyjaciel> wczytajPrzyjaciolZBazy () {
     return przyjaciele;
 }
 
-void dodajPrzyjacielaDoPliku(Przyjaciel kumpel, fstream& plik){
-            plik<<kumpel.id<<"|";
-            plik<<kumpel.imie<<"|";
-            plik<<kumpel.nazwisko<<"|";
-            plik<<kumpel.numerTelefonu<<"|";
-            plik<<kumpel.email<<"|";
-            plik<<kumpel.adres<<"|";
-            plik<<endl;
+void dodajPrzyjacielaDoPliku(Przyjaciel kumpel, fstream& plik) {
+    plik<<kumpel.id<<"|";
+    plik<<kumpel.imie<<"|";
+    plik<<kumpel.nazwisko<<"|";
+    plik<<kumpel.numerTelefonu<<"|";
+    plik<<kumpel.email<<"|";
+    plik<<kumpel.adres<<"|";
+    plik<<endl;
 }
 
 void wypiszPrzyjaciela (Przyjaciel przyjaciel) {
@@ -299,40 +420,62 @@ void edytujAdresata (vector<Przyjaciel>& przyjaciele) {
 
 int main() {
     vector<Przyjaciel> przyjaciele = wczytajPrzyjaciolZBazy();
-    char wybor;
+    vector<Uzytkownik> uzytkownicy = wczytajUzytkownikowZBazy();
+    char wybor, decyzja;
+    int zalogowany=-1;
+
 
     while (1) {
-        system ("cls");
-        cout << "1. Dodawanie" << endl;
-        cout << "2. Wyszukiwanie po imieniu" << endl;
-        cout << "3. Wyszukiwanie po nazwisku" << endl;
-        cout << "4. Wyswietl wszystkich adresatow" << endl;
-        cout << "5. Usun adresata" << endl;
-        cout << "6. Edytuj adresata" << endl;
-        cout << "9. Zakoncz dzialanie" << endl;
-        cin >> wybor;
+        if (zalogowany==-1) {
+            system("cls");
+            cout<<"1. Logowanie"<<endl;
+            cout<<"2. Rejestracja" <<endl;
+            cout<<"9. Zakoncz dzialanie" <<endl;
+            cin>>decyzja;
 
-        switch(wybor) {
-        case '1':
-            dodawaniePrzyjacielaDoBazy (przyjaciele);
-            break;
-        case '2':
-            wyszukajPoImieniu (przyjaciele);
-            break;
-        case '3':
-            wyszukajPoNazwisku (przyjaciele);
-            break;
-        case '4':
-            wyswietlWszystko (przyjaciele);
-            break;
-        case '5':
-            usunAdresata (przyjaciele);
-            break;
-        case '6':
-            edytujAdresata (przyjaciele);
-            break;
-        case '9':
-            exit(0);
+            switch(decyzja) {
+            case '1':
+                zalogowany = logowanieUzytkownika (uzytkownicy);
+                break;
+            case '2':
+                dodawanieUzytkownikaDoBazy (uzytkownicy);
+                break;
+            case '9':
+                exit(0);
+            }
+        } else {
+            system ("cls");
+            cout << "1. Dodawanie" << endl;
+            cout << "2. Wyszukiwanie po imieniu" << endl;
+            cout << "3. Wyszukiwanie po nazwisku" << endl;
+            cout << "4. Wyswietl wszystkich adresatow" << endl;
+            cout << "5. Usun adresata" << endl;
+            cout << "6. Edytuj adresata" << endl;
+            cout << "9. Zakoncz dzialanie" << endl;
+            cin >> wybor;
+
+            switch(wybor) {
+            case '1':
+                dodawaniePrzyjacielaDoBazy (przyjaciele);
+                break;
+            case '2':
+                wyszukajPoImieniu (przyjaciele);
+                break;
+            case '3':
+                wyszukajPoNazwisku (przyjaciele);
+                break;
+            case '4':
+                wyswietlWszystko (przyjaciele);
+                break;
+            case '5':
+                usunAdresata (przyjaciele);
+                break;
+            case '6':
+                edytujAdresata (przyjaciele);
+                break;
+            case '9':
+                exit(0);
+            }
         }
     }
 
