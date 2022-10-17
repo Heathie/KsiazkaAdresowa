@@ -15,7 +15,7 @@ struct Uzytkownik {
     string login="", haslo="";
 };
 
-int dodawaniePrzyjacielaDoBazy (vector<Przyjaciel>& przyjaciele) {
+int dodawaniePrzyjacielaDoBazy (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
     string imie, nazwisko, numerTelefonu, email, adres;
     while (true) {
         bool juzIstnieje=false;
@@ -66,6 +66,7 @@ int dodawaniePrzyjacielaDoBazy (vector<Przyjaciel>& przyjaciele) {
             plik.open("KsiazkaAdresowa.txt",fstream::out | fstream::app);
             if (plik.good()) {
                 plik<<nowyPrzyjaciel.id<<"|";
+                plik<<idUzytkownika<<"|";
                 plik<<nowyPrzyjaciel.imie<<"|";
                 plik<<nowyPrzyjaciel.nazwisko<<"|";
                 plik<<nowyPrzyjaciel.numerTelefonu<<"|";
@@ -201,6 +202,56 @@ int dodawanieUzytkownikaDoBazy (vector<Uzytkownik>& uzytkownicy) {
         }
     }
 }
+
+void dodajUzytkownikaDoPliku(Uzytkownik user, fstream& plik) {
+    plik<<user.idUzytkownika<<"|";
+    plik<<user.login<<"|";
+    plik<<user.haslo<<"|";
+    plik<<endl;
+}
+
+void zmienHaslo (vector<Uzytkownik> uzytkownicy,int zalogowanyUzytkownik) {
+    string haslo="", hasloPowtorka="-";
+    int indeksUzytkownika;
+    for(int i=1; i<=zalogowanyUzytkownik; i++) {
+        if(zalogowanyUzytkownik==uzytkownicy[i].idUzytkownika) {
+            indeksUzytkownika=i;
+            break;
+        }
+    }
+    while(haslo!=hasloPowtorka) {
+        system("cls");
+        cout<< "Podaj nowe haslo:"<<endl;
+        cin>>haslo;
+        if(haslo==uzytkownicy[indeksUzytkownika].haslo) {
+            cout<<"Nowe haslo nie moze byc takie samo jak stare haslo"<<endl;
+            system("pause");
+            continue;
+        }
+        cout<< "Podaj ponownie nowe haslo:"<<endl;
+        cin>> hasloPowtorka;
+
+        if (haslo!=hasloPowtorka) {
+            cout<<"Podane hasla roznia sie"<<endl;
+            system("pause");
+            continue;
+        }
+        uzytkownicy[indeksUzytkownika].haslo = haslo;
+        cout <<"Haslo zmienione"<<endl;
+    }
+
+    fstream plik;
+    plik.open("Uzytkownicy.txt",ios::out | ios::trunc);
+    if (plik.good()) {
+        for (int i=0; i< (int) uzytkownicy.size(); i++) {
+            dodajUzytkownikaDoPliku(uzytkownicy[i], plik);
+        }
+        plik.close();
+    }
+    system ("pause");
+    return;
+}
+
 
 vector<Przyjaciel> wczytajPrzyjaciolZBazy () {
     vector<Przyjaciel> przyjaciele;
@@ -451,12 +502,13 @@ int main() {
             cout << "4. Wyswietl wszystkich adresatow" << endl;
             cout << "5. Usun adresata" << endl;
             cout << "6. Edytuj adresata" << endl;
-            cout << "9. Zakoncz dzialanie" << endl;
+            cout << "7. Zmien haslo" << endl;
+            cout << "9. Wyloguj sie" << endl;
             cin >> wybor;
 
             switch(wybor) {
             case '1':
-                dodawaniePrzyjacielaDoBazy (przyjaciele);
+                dodawaniePrzyjacielaDoBazy (przyjaciele, zalogowany);
                 break;
             case '2':
                 wyszukajPoImieniu (przyjaciele);
@@ -473,8 +525,11 @@ int main() {
             case '6':
                 edytujAdresata (przyjaciele);
                 break;
+            case '7':
+                zmienHaslo (uzytkownicy, zalogowany);
+                break;
             case '9':
-                exit(0);
+                zalogowany=-1;
             }
         }
     }
