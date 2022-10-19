@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <windows.h>
+#include <cstdio>
 
 using namespace std;
 
@@ -9,11 +10,13 @@ struct Uzytkownik {
     int idUzytkownika=0;
     string login="", haslo="";
 };
+
 struct Przyjaciel {
     int id=0, idUzytkownika;
     string imie="", nazwisko="", numerTelefonu="", email="", adres="";
 };
-vector<Przyjaciel> wczytajPrzyjaciolZBazy () {
+
+vector<Przyjaciel> wczytajPrzyjaciolZBazy (int idUzytkownika, int& idOstatniegoAdresata) {
     vector<Przyjaciel> przyjaciele;
     int nr_pola = 1;
     string linia;
@@ -58,7 +61,9 @@ vector<Przyjaciel> wczytajPrzyjaciolZBazy () {
 
                     if (nr_pola == 7) {
                         nr_pola = 1;
-                        przyjaciele.push_back(kumpel);
+                        if (kumpel.idUzytkownika==idUzytkownika) {
+                            przyjaciele.push_back(kumpel);
+                        }
                     } else {
                         nr_pola++;
                     }
@@ -71,6 +76,8 @@ vector<Przyjaciel> wczytajPrzyjaciolZBazy () {
         }
     }
     plik.close();
+
+    idOstatniegoAdresata=kumpel.id;
 
     return przyjaciele;
 };
@@ -86,7 +93,7 @@ void dodajPrzyjacielaDoPliku(Przyjaciel kumpel, fstream& plik) {
     plik<<endl;
 }
 
-int dodawaniePrzyjacielaDoBazy (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
+int dodawaniePrzyjacielaDoBazy (vector<Przyjaciel>& przyjaciele, int idUzytkownika, int& idOstatniegoAdresata) {
     string imie, nazwisko, numerTelefonu, email, adres;
     while (true) {
         bool juzIstnieje=false;
@@ -126,7 +133,8 @@ int dodawaniePrzyjacielaDoBazy (vector<Przyjaciel>& przyjaciele, int idUzytkowni
 
         if (!juzIstnieje) {
             Przyjaciel nowyPrzyjaciel;
-            nowyPrzyjaciel.id = przyjaciele.size() > 0 ? przyjaciele[przyjaciele.size()-1].id + 1 : 1;
+            idOstatniegoAdresata++;
+            nowyPrzyjaciel.id = idOstatniegoAdresata;
             nowyPrzyjaciel.idUzytkownika = idUzytkownika;
             nowyPrzyjaciel.imie=imie;
             nowyPrzyjaciel.nazwisko=nazwisko;
@@ -148,7 +156,7 @@ int dodawaniePrzyjacielaDoBazy (vector<Przyjaciel>& przyjaciele, int idUzytkowni
                 cout << "Nie mozna otworzyc pliku: KsiazkaAdresowa.txt do rejestracji adresatow" << endl;
             }
 
-            return przyjaciele.size()+1;
+            return idOstatniegoAdresata;
         }
     }
 }
@@ -220,6 +228,13 @@ int logowanieUzytkownika (vector<Uzytkownik> uzytkownicy) {
     return -1;
 }
 
+void dodajUzytkownikaDoPliku(Uzytkownik user, fstream& plik) {
+    plik<<user.idUzytkownika<<"|";
+    plik<<user.login<<"|";
+    plik<<user.haslo<<"|";
+    plik<<endl;
+}
+
 int dodawanieUzytkownikaDoBazy (vector<Uzytkownik>& uzytkownicy) {
     string login,haslo;
     while (true) {
@@ -251,10 +266,7 @@ int dodawanieUzytkownikaDoBazy (vector<Uzytkownik>& uzytkownicy) {
             fstream plik;
             plik.open("Uzytkownicy.txt",fstream::in |fstream::out | fstream::app);
             if (plik.good()) {
-                plik<<nowyUzytkownik.idUzytkownika<<"|";
-                plik<<nowyUzytkownik.login<<"|";
-                plik<<nowyUzytkownik.haslo<<"|";
-                plik<<endl;
+                dodajUzytkownikaDoPliku(nowyUzytkownik, plik);
                 plik.close();
 
                 cout << "Uzytkownik dodany"<<endl;
@@ -266,13 +278,6 @@ int dodawanieUzytkownikaDoBazy (vector<Uzytkownik>& uzytkownicy) {
             return uzytkownicy.size()+1;
         }
     }
-}
-
-void dodajUzytkownikaDoPliku(Uzytkownik user, fstream& plik) {
-    plik<<user.idUzytkownika<<"|";
-    plik<<user.login<<"|";
-    plik<<user.haslo<<"|";
-    plik<<endl;
 }
 
 void zmienHaslo (vector<Uzytkownik>& uzytkownicy, int zalogowanyUzytkownik) {
@@ -364,8 +369,8 @@ void wyswietlWszystko(vector<Przyjaciel> przyjaciele, int idUzytkownika) {
         cout<<"Brak adresatow w bazie"<<endl;
     } else {
         for(int i=0; i< (int) przyjaciele.size(); i++) {
-            if(przyjaciele[i].idUzytkownika==idUzytkownika){
-            wypiszPrzyjaciela (przyjaciele[i]);
+            if(przyjaciele[i].idUzytkownika==idUzytkownika) {
+                wypiszPrzyjaciela (przyjaciele[i]);
             }
         }
     }
@@ -381,7 +386,7 @@ void usunAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
 
     for (int i=0; i< (int) przyjaciele.size(); i++) {
         if (przyjaciele[i].id==atoi(id.c_str())) {
-                if(przyjaciele[i].idUzytkownika!=idUzytkownika) {
+            if(przyjaciele[i].idUzytkownika!=idUzytkownika) {
                 break;
             }
             indeksGosciaDoUsuniecia=i;
@@ -401,17 +406,84 @@ void usunAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
         przyjaciele.erase(przyjaciele.begin()+indeksGosciaDoUsuniecia);
     }
 
+    int nr_pola = 1;
+    string linia;
+    string temp;
+
+    Przyjaciel kumpel;
+    int indeks = 0;
     fstream plik;
-    plik.open("KsiazkaAdresowa.txt",ios::out | ios::trunc);
-    if (plik.good()) {
-        for (int i=0; i< (int) przyjaciele.size(); i++) {
-            dodajPrzyjacielaDoPliku(przyjaciele[i], plik);
+    fstream plikTymczasowy;
+
+    plik.open("KsiazkaAdresowa.txt",ios::in);
+    plikTymczasowy.open("KsiazkaAdresowaTymczasowy.txt",ios::out | ios::trunc);
+
+    if (!plikTymczasowy.good()) {
+        plikTymczasowy<<"\n";
+    } else if (plik.good()) {
+        while(!plik.eof()) {
+            getline(plik, linia);
+
+            for (int i = 0; i < (int) linia.length(); i++) {
+                if (linia[i] == '|') {
+                    switch(nr_pola) {
+                    case 1:
+                        kumpel.id = atoi(temp.c_str());
+                        break;
+                    case 2:
+                        kumpel.idUzytkownika = atoi(temp.c_str());
+                        break;
+                    case 3:
+                        kumpel.imie = temp;
+                        break;
+                    case 4:
+                        kumpel.nazwisko = temp;
+                        break;
+                    case 5:
+                        kumpel.numerTelefonu = temp;
+                        break;
+                    case 6:
+                        kumpel.email = temp;
+                        break;
+                    case 7:
+                        kumpel.adres = temp;
+                        break;
+                    }
+
+                    if (nr_pola == 7) {
+                        nr_pola = 1;
+                    } else {
+                        nr_pola++;
+                    }
+
+                    temp = "";
+                } else {
+                    temp.push_back(linia.at(i));
+                }
+            }
+
+            if (kumpel.idUzytkownika!=idUzytkownika) {
+                plikTymczasowy<<linia<<endl;
+            } else {
+                if (indeks < przyjaciele.size()) {
+                dodajPrzyjacielaDoPliku(przyjaciele[indeks], plikTymczasowy);
+                indeks++;
+                }
+            }
+
         }
-        plik.close();
-        cout <<"Adresat usuniety"<<endl;
     }
-    system ("pause");
-    return;
+    plik.close();
+    plikTymczasowy.close();
+
+    char originalname[] = "KsiazkaAdresowaTymczasowy.txt";
+    char temporaryname[] = "KsiazkaAdresowa.txt";
+
+    std::remove("KsiazkaAdresowa.txt");
+
+    if (rename(originalname, temporaryname) != 0)
+        perror("Error renaming file");
+
 }
 
 void edytujAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
@@ -476,8 +548,9 @@ void edytujAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
 }
 
 int main() {
-    vector<Przyjaciel> przyjaciele = wczytajPrzyjaciolZBazy();
+    vector<Przyjaciel> przyjaciele;
     vector<Uzytkownik> uzytkownicy = wczytajUzytkownikowZBazy();
+    int idOstatniegoAdresata=0;
     char wybor, decyzja;
     int zalogowany=-1;
 
@@ -493,6 +566,9 @@ int main() {
             switch(decyzja) {
             case '1':
                 zalogowany = logowanieUzytkownika (uzytkownicy);
+                przyjaciele = wczytajPrzyjaciolZBazy(zalogowany, idOstatniegoAdresata);
+                cout<<idOstatniegoAdresata<<"<----"<<endl;
+                system ("pause");
                 break;
             case '2':
                 dodawanieUzytkownikaDoBazy (uzytkownicy);
@@ -501,7 +577,7 @@ int main() {
                 exit(0);
             }
         } else {
-            system ("cls");
+            //system ("cls");
             cout << "1. Dodawanie" << endl;
             cout << "2. Wyszukiwanie po imieniu" << endl;
             cout << "3. Wyszukiwanie po nazwisku" << endl;
@@ -514,7 +590,7 @@ int main() {
 
             switch(wybor) {
             case '1':
-                dodawaniePrzyjacielaDoBazy (przyjaciele, zalogowany);
+                dodawaniePrzyjacielaDoBazy (przyjaciele, zalogowany, idOstatniegoAdresata);
                 break;
             case '2':
                 wyszukajPoImieniu (przyjaciele, zalogowany);
