@@ -25,7 +25,7 @@ vector<Przyjaciel> wczytajPrzyjaciolZBazy (int idUzytkownika, int& idOstatniegoA
     Przyjaciel kumpel;
 
     fstream plik;
-    plik.open("KsiazkaAdresowa.txt", fstream::in );//| fstream::out | fstream::app);    //zmiana probna
+    plik.open("KsiazkaAdresowa.txt", fstream::in );
 
     if (!plik.good()) {
         plik<<"\n";
@@ -213,18 +213,28 @@ vector<Uzytkownik> wczytajUzytkownikowZBazy () {
 
 int logowanieUzytkownika (vector<Uzytkownik> uzytkownicy) {
     string login, haslo;
+
     cout<< "Podaj login"<<endl;
     cin>>login;
-    cout<< "Podaj haslo"<<endl;
-    cin>>haslo;
 
     for (int i=0; i < (int) uzytkownicy.size(); i++) {
-        if (uzytkownicy[i].login==login && uzytkownicy[i].haslo==haslo) {
-            return uzytkownicy[i].idUzytkownika;
+
+        if (uzytkownicy[i].login == login)  {
+            for (int proby = 0; proby<3; proby++) {
+                cout<< "Podaj haslo. Pozostalo prob "<< 3-proby << ":"<< endl;
+                cin>>haslo;
+                if (uzytkownicy[i].haslo==haslo) {
+                    cout<<"Zalogowales sie"<<endl;
+                    Sleep(1000);
+                    return uzytkownicy[i].idUzytkownika;
+                }
+            }
+            cout<< "Podales 3 razy bledne haslo. Poczekaj 3 sekundy przed kolejna proba."<<endl;
+            Sleep(3000);
+            return -1;
         }
     }
-    cout<<"Bledne dane logowania"<<endl;
-    system ("pause");
+    cout<<"Nie ma uzytkownika z takim loginem"<<endl;
     return -1;
 }
 
@@ -283,14 +293,15 @@ int dodawanieUzytkownikaDoBazy (vector<Uzytkownik>& uzytkownicy) {
 void zmienHaslo (vector<Uzytkownik>& uzytkownicy, int zalogowanyUzytkownik) {
     string haslo="", hasloPowtorka="-";
     int indeksUzytkownika;
-    for(int i=1; i<=zalogowanyUzytkownik; i++) {
+    for(int i=0; i<=zalogowanyUzytkownik; i++) {
         if(zalogowanyUzytkownik==uzytkownicy[i].idUzytkownika) {
             indeksUzytkownika=i;
             break;
         }
     }
+    cout<<indeksUzytkownika<<"<-----"<<endl;
     while(haslo!=hasloPowtorka) {
-        system("cls");
+        //system("cls");
         cout<< "Podaj nowe haslo:"<<endl;
         cin>>haslo;
         if(haslo==uzytkownicy[indeksUzytkownika].haslo) {
@@ -404,7 +415,147 @@ void usunAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
 
     if (potwierdzenie == 't') {
         przyjaciele.erase(przyjaciele.begin()+indeksGosciaDoUsuniecia);
+        cout<<"Adresat usuniety"<<endl;
     }
+
+    int nr_pola = 1;
+    string linia;
+    string temp;
+
+    Przyjaciel kumpel;
+    int indeks = 0;
+    fstream plik;
+    fstream plikTymczasowy;
+
+    plik.open("KsiazkaAdresowa.txt",ios::in);
+    plikTymczasowy.open("KsiazkaAdresowaTymczasowy.txt",ios::out | ios::trunc);
+
+    if (!plikTymczasowy.good()) {
+        plikTymczasowy<<"\n";
+    } else if (plik.good()) {
+        while(!plik.eof()) {
+            getline(plik, linia);
+
+            if (plik.eof()) {
+                break;
+            }
+
+            for (int i = 0; i < (int) linia.length(); i++) {
+                if (linia[i] == '|') {
+                    switch(nr_pola) {
+                    case 1:
+                        kumpel.id = atoi(temp.c_str());
+                        break;
+                    case 2:
+                        kumpel.idUzytkownika = atoi(temp.c_str());
+                        break;
+                    case 3:
+                        kumpel.imie = temp;
+                        break;
+                    case 4:
+                        kumpel.nazwisko = temp;
+                        break;
+                    case 5:
+                        kumpel.numerTelefonu = temp;
+                        break;
+                    case 6:
+                        kumpel.email = temp;
+                        break;
+                    case 7:
+                        kumpel.adres = temp;
+                        break;
+                    }
+
+                    if (nr_pola == 7) {
+                        nr_pola = 1;
+                    } else {
+                        nr_pola++;
+                    }
+
+                    temp = "";
+                } else {
+                    temp.push_back(linia.at(i));
+                }
+            }
+
+            if (kumpel.idUzytkownika!=idUzytkownika) {
+                plikTymczasowy<<linia<<endl;
+            } else {
+                if (indeks < (int) przyjaciele.size() && kumpel.id==przyjaciele[indeks].id) {
+                    dodajPrzyjacielaDoPliku(przyjaciele[indeks], plikTymczasowy);
+                    indeks++;
+                }
+            }
+
+        }
+    }
+    plik.close();
+    plikTymczasowy.close();
+
+    char originalname[] = "KsiazkaAdresowaTymczasowy.txt";
+    char temporaryname[] = "KsiazkaAdresowa.txt";
+
+    std::remove("KsiazkaAdresowa.txt");
+
+    if (rename(originalname, temporaryname) != 0) {
+        perror("Error renaming file");
+    }
+    system ("pause");
+
+}
+
+void edytujAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
+    string id;
+    int indeksAdresataDoEdycji=-1;
+    char wybor;
+    string dane;
+    cout<<"Podaj ID adresata"<<endl;
+    cin>>id;
+
+    for (int i=0; i< (int) przyjaciele.size(); i++) {
+        if (przyjaciele[i].id==atoi(id.c_str())) {
+            indeksAdresataDoEdycji=i;
+            break;
+        }
+    }
+
+    if (indeksAdresataDoEdycji==-1) {
+        cout<<"Nie ma takiego adresata w bazie"<<endl;
+        system("pause");
+        return;
+    }
+
+    cout<<"1.Imie"<<endl;
+    cout<<"2.Nazwisko"<<endl;
+    cout<<"3.Numer telefonu"<<endl;
+    cout<<"4.Email"<<endl;
+    cout<<"5.Adres"<<endl;
+    cout<<"6.Powrot do menu"<<endl;
+    cin>>wybor;
+    cin.ignore();
+    getline(cin,dane);
+
+    switch(wybor) {
+    case '1':
+        przyjaciele[indeksAdresataDoEdycji].imie=dane;
+        break;
+    case '2':
+        przyjaciele[indeksAdresataDoEdycji].nazwisko=dane;
+        break;
+    case '3':
+        przyjaciele[indeksAdresataDoEdycji].numerTelefonu=dane;
+        break;
+    case '4':
+        przyjaciele[indeksAdresataDoEdycji].email=dane;
+        break;
+    case '5':
+        przyjaciele[indeksAdresataDoEdycji].adres=dane;
+        break;
+    case '6':
+        return;
+        break;
+    }
+    cout <<"Adresat zedytowany"<<endl;
 
     int nr_pola = 1;
     string linia;
@@ -465,9 +616,9 @@ void usunAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
             if (kumpel.idUzytkownika!=idUzytkownika) {
                 plikTymczasowy<<linia<<endl;
             } else {
-                if (indeks < przyjaciele.size()) {
-                dodajPrzyjacielaDoPliku(przyjaciele[indeks], plikTymczasowy);
-                indeks++;
+                if (indeks < (int) przyjaciele.size() && kumpel.id==przyjaciele[indeks].id) {
+                    dodajPrzyjacielaDoPliku(przyjaciele[indeks], plikTymczasowy);
+                    indeks++;
                 }
             }
 
@@ -484,65 +635,6 @@ void usunAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
     if (rename(originalname, temporaryname) != 0)
         perror("Error renaming file");
 
-}
-
-void edytujAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
-    string id;
-    char wybor;
-    string dane;
-    cout<<"Podaj ID adresata"<<endl;
-    cin>>id;
-
-    for (int i=0; i< (int) przyjaciele.size(); i++) {
-
-        if (przyjaciele[i].id==atoi(id.c_str())) {
-            if(przyjaciele[i].idUzytkownika!=idUzytkownika) {
-                cout<<"Nie ma takiego adresata w bazie"<<endl;
-                break;
-            }
-            cout<<"1.Imie"<<endl;
-            cout<<"2.Nazwisko"<<endl;
-            cout<<"3.Numer telefonu"<<endl;
-            cout<<"4.Email"<<endl;
-            cout<<"5.Adres"<<endl;
-            cout<<"6.Powrot do menu"<<endl;
-            cin>>wybor;
-            cin.ignore();
-            getline(cin,dane);
-
-            switch(wybor) {
-            case '1':
-                przyjaciele[i].imie=dane;
-                break;
-            case '2':
-                przyjaciele[i].nazwisko=dane;
-                break;
-            case '3':
-                przyjaciele[i].numerTelefonu=dane;
-                break;
-            case '4':
-                przyjaciele[i].email=dane;
-                break;
-            case '5':
-                przyjaciele[i].adres=dane;
-                break;
-            case '6':
-                return;
-                break;
-            }
-            cout <<"Adresat zedytowany"<<endl;
-            break;
-        }
-    }
-
-    fstream plik;
-    plik.open("KsiazkaAdresowa.txt",ios::out | ios::trunc);
-    if (plik.good()) {
-        for (int i=0; i< (int) przyjaciele.size(); i++) {
-            dodajPrzyjacielaDoPliku(przyjaciele[i], plik);
-        }
-        plik.close();
-    }
     system ("pause");
     return;
 }
@@ -567,8 +659,6 @@ int main() {
             case '1':
                 zalogowany = logowanieUzytkownika (uzytkownicy);
                 przyjaciele = wczytajPrzyjaciolZBazy(zalogowany, idOstatniegoAdresata);
-                cout<<idOstatniegoAdresata<<"<----"<<endl;
-                system ("pause");
                 break;
             case '2':
                 dodawanieUzytkownikaDoBazy (uzytkownicy);
@@ -577,7 +667,7 @@ int main() {
                 exit(0);
             }
         } else {
-            //system ("cls");
+            system ("cls");
             cout << "1. Dodawanie" << endl;
             cout << "2. Wyszukiwanie po imieniu" << endl;
             cout << "3. Wyszukiwanie po nazwisku" << endl;

@@ -1,3 +1,5 @@
 Uzytkownicy.txt
 KsiazkaAdresowa.txt
-bin/Debug/ksiazkaAdresowa.exe
+bin/
+main.o
+main.exe
