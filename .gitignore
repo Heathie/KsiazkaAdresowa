@@ -3,3 +3,7 @@ KsiazkaAdresowa.txt
 bin/
 main.o
 main.exe
+obj/
+ksiazkaAdresowa.cbp
+ksiazkaAdresowa.depend
+ksiazkaAdresowa.layout

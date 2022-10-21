@@ -221,7 +221,7 @@ int logowanieUzytkownika (vector<Uzytkownik> uzytkownicy) {
 
         if (uzytkownicy[i].login == login)  {
             for (int proby = 0; proby<3; proby++) {
-                cout<< "Podaj haslo. Pozostalo prob "<< 3-proby << ":"<< endl;
+                cout<< "Podaj haslo. Pozostalo prob "<< 3-proby << " : ";
                 cin>>haslo;
                 if (uzytkownicy[i].haslo==haslo) {
                     cout<<"Zalogowales sie"<<endl;
@@ -235,6 +235,7 @@ int logowanieUzytkownika (vector<Uzytkownik> uzytkownicy) {
         }
     }
     cout<<"Nie ma uzytkownika z takim loginem"<<endl;
+    system("pause");
     return -1;
 }
 
@@ -299,17 +300,16 @@ void zmienHaslo (vector<Uzytkownik>& uzytkownicy, int zalogowanyUzytkownik) {
             break;
         }
     }
-    cout<<indeksUzytkownika<<"<-----"<<endl;
     while(haslo!=hasloPowtorka) {
-        //system("cls");
-        cout<< "Podaj nowe haslo:"<<endl;
+        system("cls");
+        cout<< "Podaj nowe haslo: ";
         cin>>haslo;
         if(haslo==uzytkownicy[indeksUzytkownika].haslo) {
             cout<<"Nowe haslo nie moze byc takie samo jak stare haslo"<<endl;
             system("pause");
             continue;
         }
-        cout<< "Podaj ponownie nowe haslo:"<<endl;
+        cout<< "Podaj ponownie nowe haslo: ";
         cin>> hasloPowtorka;
 
         if (haslo!=hasloPowtorka) {
@@ -334,7 +334,12 @@ void zmienHaslo (vector<Uzytkownik>& uzytkownicy, int zalogowanyUzytkownik) {
 }
 
 void wypiszPrzyjaciela (Przyjaciel przyjaciel) {
-    cout<<przyjaciel.id<< " "<< przyjaciel.imie << " " << przyjaciel.nazwisko <<" " << przyjaciel.numerTelefonu <<" " << przyjaciel.email <<" " << przyjaciel.adres << endl;
+    cout<<"ID adresata: "<<przyjaciel.id<<endl;
+    cout<<"Imie: "<< przyjaciel.imie <<endl;
+    cout<< "Nazwisko: " << przyjaciel.nazwisko <<endl;
+    cout<<"Numer Telefonu: " << przyjaciel.numerTelefonu <<endl;
+    cout<<"Email: " << przyjaciel.email <<endl;
+    cout<<"Adres " << przyjaciel.adres << endl;
 }
 
 void wyszukajPoImieniu (vector<Przyjaciel> przyjaciele, int idUzytkownika) {
@@ -410,7 +415,7 @@ void usunAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
         system("pause");
         return;
     }
-    cout << "Usunac adresata?" << endl;
+    cout << "Usunac adresata? W celu potwierdzenia nacisnij t: ";
     cin>>potwierdzenie;
 
     if (potwierdzenie == 't') {
@@ -421,7 +426,6 @@ void usunAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
     int nr_pola = 1;
     string linia;
     string temp;
-
     Przyjaciel kumpel;
     int indeks = 0;
     fstream plik;
@@ -501,7 +505,7 @@ void usunAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
         perror("Error renaming file");
     }
     system ("pause");
-
+    return;
 }
 
 void edytujAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
@@ -509,7 +513,7 @@ void edytujAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
     int indeksAdresataDoEdycji=-1;
     char wybor;
     string dane;
-    cout<<"Podaj ID adresata"<<endl;
+    cout<<"Podaj ID adresata: ";
     cin>>id;
 
     for (int i=0; i< (int) przyjaciele.size(); i++) {
@@ -525,12 +529,15 @@ void edytujAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
         return;
     }
 
+    cout<<"----------------------------"<<endl;
     cout<<"1.Imie"<<endl;
     cout<<"2.Nazwisko"<<endl;
     cout<<"3.Numer telefonu"<<endl;
     cout<<"4.Email"<<endl;
     cout<<"5.Adres"<<endl;
     cout<<"6.Powrot do menu"<<endl;
+    cout<<"----------------------------"<<endl;
+    cout<<"Twoj wybor: ";
     cin>>wybor;
     cin.ignore();
     getline(cin,dane);
@@ -560,7 +567,6 @@ void edytujAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
     int nr_pola = 1;
     string linia;
     string temp;
-
     Przyjaciel kumpel;
     int indeks = 0;
     fstream plik;
@@ -644,21 +650,25 @@ int main() {
     vector<Uzytkownik> uzytkownicy = wczytajUzytkownikowZBazy();
     int idOstatniegoAdresata=0;
     char wybor, decyzja;
-    int zalogowany=-1;
+    int idZalogowanegoUzytkownika=-1;
 
 
     while (1) {
-        if (zalogowany==-1) {
+        if (idZalogowanegoUzytkownika==-1) {
             system("cls");
+            cout<< "     >>>MENU GLOWNE<<<"<<endl;
+            cout<<"----------------------------"<<endl;
             cout<<"1. Logowanie"<<endl;
             cout<<"2. Rejestracja" <<endl;
-            cout<<"9. Zakoncz dzialanie" <<endl;
+            cout<<"9. Koniec programu" <<endl;
+            cout<<"----------------------------"<<endl;
+            cout<<"Twoj wybor: ";
             cin>>decyzja;
 
             switch(decyzja) {
             case '1':
-                zalogowany = logowanieUzytkownika (uzytkownicy);
-                przyjaciele = wczytajPrzyjaciolZBazy(zalogowany, idOstatniegoAdresata);
+                idZalogowanegoUzytkownika = logowanieUzytkownika (uzytkownicy);
+                przyjaciele = wczytajPrzyjaciolZBazy(idZalogowanegoUzytkownika, idOstatniegoAdresata);
                 break;
             case '2':
                 dodawanieUzytkownikaDoBazy (uzytkownicy);
@@ -668,6 +678,8 @@ int main() {
             }
         } else {
             system ("cls");
+            cout<< "        >>>MENU<<<"<<endl;
+            cout<<"----------------------------"<<endl;
             cout << "1. Dodawanie" << endl;
             cout << "2. Wyszukiwanie po imieniu" << endl;
             cout << "3. Wyszukiwanie po nazwisku" << endl;
@@ -676,32 +688,34 @@ int main() {
             cout << "6. Edytuj adresata" << endl;
             cout << "7. Zmien haslo" << endl;
             cout << "9. Wyloguj sie" << endl;
+            cout<<"----------------------------"<<endl;
+            cout<<"Twoj wybor: ";
             cin >> wybor;
 
             switch(wybor) {
             case '1':
-                dodawaniePrzyjacielaDoBazy (przyjaciele, zalogowany, idOstatniegoAdresata);
+                dodawaniePrzyjacielaDoBazy (przyjaciele, idZalogowanegoUzytkownika, idOstatniegoAdresata);
                 break;
             case '2':
-                wyszukajPoImieniu (przyjaciele, zalogowany);
+                wyszukajPoImieniu (przyjaciele, idZalogowanegoUzytkownika);
                 break;
             case '3':
-                wyszukajPoNazwisku (przyjaciele, zalogowany);
+                wyszukajPoNazwisku (przyjaciele, idZalogowanegoUzytkownika);
                 break;
             case '4':
-                wyswietlWszystko (przyjaciele, zalogowany);
+                wyswietlWszystko (przyjaciele, idZalogowanegoUzytkownika);
                 break;
             case '5':
-                usunAdresata (przyjaciele, zalogowany);
+                usunAdresata (przyjaciele, idZalogowanegoUzytkownika);
                 break;
             case '6':
-                edytujAdresata (przyjaciele, zalogowany);
+                edytujAdresata (przyjaciele, idZalogowanegoUzytkownika);
                 break;
             case '7':
-                zmienHaslo (uzytkownicy, zalogowany);
+                zmienHaslo (uzytkownicy, idZalogowanegoUzytkownika);
                 break;
             case '9':
-                zalogowany=-1;
+                idZalogowanegoUzytkownika=-1;
             }
         }
     }
