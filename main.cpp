@@ -6,6 +6,9 @@
 
 using namespace std;
 
+const char NAZWA_PLIKU_TYMCZASOWEGO[] = "KsiazkaAdresowaTymczasowy.txt";
+const char NAZWA_PLIKU_ORYGINALNEGO[] = "KsiazkaAdresowa.txt";
+
 struct Uzytkownik {
     int idUzytkownika=0;
     string login="", haslo="";
@@ -214,7 +217,7 @@ vector<Uzytkownik> wczytajUzytkownikowZBazy () {
 int logowanieUzytkownika (vector<Uzytkownik> uzytkownicy) {
     string login, haslo;
 
-    cout<< "Podaj login"<<endl;
+    cout<< "Podaj login: ";
     cin>>login;
 
     for (int i=0; i < (int) uzytkownicy.size(); i++) {
@@ -301,20 +304,17 @@ void zmienHaslo (vector<Uzytkownik>& uzytkownicy, int zalogowanyUzytkownik) {
         }
     }
     while(haslo!=hasloPowtorka) {
-        system("cls");
         cout<< "Podaj nowe haslo: ";
         cin>>haslo;
         if(haslo==uzytkownicy[indeksUzytkownika].haslo) {
-            cout<<"Nowe haslo nie moze byc takie samo jak stare haslo"<<endl;
-            system("pause");
+            cout<<"Nowe haslo nie moze byc takie samo jak stare haslo. Podaj ponownie nowe haslo."<<endl;
             continue;
         }
         cout<< "Podaj ponownie nowe haslo: ";
         cin>> hasloPowtorka;
 
         if (haslo!=hasloPowtorka) {
-            cout<<"Podane hasla roznia sie"<<endl;
-            system("pause");
+            cout<<"Podane hasla roznia sie. Podaj ponownie nowe haslo."<<endl;
             continue;
         }
         uzytkownicy[indeksUzytkownika].haslo = haslo;
@@ -334,6 +334,7 @@ void zmienHaslo (vector<Uzytkownik>& uzytkownicy, int zalogowanyUzytkownik) {
 }
 
 void wypiszPrzyjaciela (Przyjaciel przyjaciel) {
+    cout<<"----------------------------"<<endl;
     cout<<"ID adresata: "<<przyjaciel.id<<endl;
     cout<<"Imie: "<< przyjaciel.imie <<endl;
     cout<< "Nazwisko: " << przyjaciel.nazwisko <<endl;
@@ -384,6 +385,7 @@ void wyswietlWszystko(vector<Przyjaciel> przyjaciele, int idUzytkownika) {
     if(przyjaciele.size() == 0) {
         cout<<"Brak adresatow w bazie"<<endl;
     } else {
+        system("cls");
         for(int i=0; i< (int) przyjaciele.size(); i++) {
             if(przyjaciele[i].idUzytkownika==idUzytkownika) {
                 wypiszPrzyjaciela (przyjaciele[i]);
@@ -393,36 +395,7 @@ void wyswietlWszystko(vector<Przyjaciel> przyjaciele, int idUzytkownika) {
     system ("pause");
 }
 
-void usunAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
-    string id;
-    int indeksGosciaDoUsuniecia=-1;
-    char potwierdzenie;
-    cout << "Podaj ID adresata: ";
-    cin>>id;
-
-    for (int i=0; i< (int) przyjaciele.size(); i++) {
-        if (przyjaciele[i].id==atoi(id.c_str())) {
-            if(przyjaciele[i].idUzytkownika!=idUzytkownika) {
-                break;
-            }
-            indeksGosciaDoUsuniecia=i;
-            break;
-        }
-    }
-
-    if (indeksGosciaDoUsuniecia==-1) {
-        cout<<"Nie ma takiego adresata w bazie"<<endl;
-        system("pause");
-        return;
-    }
-    cout << "Usunac adresata? W celu potwierdzenia nacisnij t: ";
-    cin>>potwierdzenie;
-
-    if (potwierdzenie == 't') {
-        przyjaciele.erase(przyjaciele.begin()+indeksGosciaDoUsuniecia);
-        cout<<"Adresat usuniety"<<endl;
-    }
-
+void zastapPlikOryginalny (vector<Przyjaciel> przyjaciele, int idUzytkownika) {
     int nr_pola = 1;
     string linia;
     string temp;
@@ -431,8 +404,8 @@ void usunAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
     fstream plik;
     fstream plikTymczasowy;
 
-    plik.open("KsiazkaAdresowa.txt",ios::in);
-    plikTymczasowy.open("KsiazkaAdresowaTymczasowy.txt",ios::out | ios::trunc);
+    plik.open(NAZWA_PLIKU_ORYGINALNEGO,ios::in);
+    plikTymczasowy.open(NAZWA_PLIKU_TYMCZASOWEGO,ios::out | ios::trunc);
 
     if (!plikTymczasowy.good()) {
         plikTymczasowy<<"\n";
@@ -496,16 +469,46 @@ void usunAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
     plik.close();
     plikTymczasowy.close();
 
-    char originalname[] = "KsiazkaAdresowaTymczasowy.txt";
-    char temporaryname[] = "KsiazkaAdresowa.txt";
+    std::remove(NAZWA_PLIKU_ORYGINALNEGO);
 
-    std::remove("KsiazkaAdresowa.txt");
-
-    if (rename(originalname, temporaryname) != 0) {
+    if (rename(NAZWA_PLIKU_TYMCZASOWEGO, NAZWA_PLIKU_ORYGINALNEGO) != 0) {
         perror("Error renaming file");
     }
     system ("pause");
     return;
+}
+
+void usunAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
+    string id;
+    int indeksGosciaDoUsuniecia=-1;
+    char potwierdzenie;
+    cout << "Podaj ID adresata: ";
+    cin>>id;
+
+    for (int i=0; i< (int) przyjaciele.size(); i++) {
+        if (przyjaciele[i].id==atoi(id.c_str())) {
+            if(przyjaciele[i].idUzytkownika!=idUzytkownika) {
+                break;
+            }
+            indeksGosciaDoUsuniecia=i;
+            break;
+        }
+    }
+
+    if (indeksGosciaDoUsuniecia==-1) {
+        cout<<"Nie ma takiego adresata w bazie"<<endl;
+        system("pause");
+        return;
+    }
+    cout << "Usunac adresata? W celu potwierdzenia nacisnij t: ";
+    cin>>potwierdzenie;
+
+    if (potwierdzenie == 't') {
+        przyjaciele.erase(przyjaciele.begin()+indeksGosciaDoUsuniecia);
+        cout<<"Adresat usuniety"<<endl;
+    }
+
+    zastapPlikOryginalny (przyjaciele, idUzytkownika);
 }
 
 void edytujAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
@@ -564,85 +567,7 @@ void edytujAdresata (vector<Przyjaciel>& przyjaciele, int idUzytkownika) {
     }
     cout <<"Adresat zedytowany"<<endl;
 
-    int nr_pola = 1;
-    string linia;
-    string temp;
-    Przyjaciel kumpel;
-    int indeks = 0;
-    fstream plik;
-    fstream plikTymczasowy;
-
-    plik.open("KsiazkaAdresowa.txt",ios::in);
-    plikTymczasowy.open("KsiazkaAdresowaTymczasowy.txt",ios::out | ios::trunc);
-
-    if (!plikTymczasowy.good()) {
-        plikTymczasowy<<"\n";
-    } else if (plik.good()) {
-        while(!plik.eof()) {
-            getline(plik, linia);
-
-            for (int i = 0; i < (int) linia.length(); i++) {
-                if (linia[i] == '|') {
-                    switch(nr_pola) {
-                    case 1:
-                        kumpel.id = atoi(temp.c_str());
-                        break;
-                    case 2:
-                        kumpel.idUzytkownika = atoi(temp.c_str());
-                        break;
-                    case 3:
-                        kumpel.imie = temp;
-                        break;
-                    case 4:
-                        kumpel.nazwisko = temp;
-                        break;
-                    case 5:
-                        kumpel.numerTelefonu = temp;
-                        break;
-                    case 6:
-                        kumpel.email = temp;
-                        break;
-                    case 7:
-                        kumpel.adres = temp;
-                        break;
-                    }
-
-                    if (nr_pola == 7) {
-                        nr_pola = 1;
-                    } else {
-                        nr_pola++;
-                    }
-
-                    temp = "";
-                } else {
-                    temp.push_back(linia.at(i));
-                }
-            }
-
-            if (kumpel.idUzytkownika!=idUzytkownika) {
-                plikTymczasowy<<linia<<endl;
-            } else {
-                if (indeks < (int) przyjaciele.size() && kumpel.id==przyjaciele[indeks].id) {
-                    dodajPrzyjacielaDoPliku(przyjaciele[indeks], plikTymczasowy);
-                    indeks++;
-                }
-            }
-
-        }
-    }
-    plik.close();
-    plikTymczasowy.close();
-
-    char originalname[] = "KsiazkaAdresowaTymczasowy.txt";
-    char temporaryname[] = "KsiazkaAdresowa.txt";
-
-    std::remove("KsiazkaAdresowa.txt");
-
-    if (rename(originalname, temporaryname) != 0)
-        perror("Error renaming file");
-
-    system ("pause");
-    return;
+    zastapPlikOryginalny (przyjaciele, idUzytkownika);
 }
 
 int main() {
